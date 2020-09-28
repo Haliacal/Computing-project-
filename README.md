@@ -22,6 +22,9 @@ pip install numpy
 import numpy as np
 
 pip install tensorflow
+import tensorflow
 
+pip install sklearn
+import sklearn
 
 ```
