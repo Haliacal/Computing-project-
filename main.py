@@ -38,6 +38,9 @@ gold_data = quandl.get("LBMA/GOLD")
 metal_date= []
 gold_usd_am = import_data(quandl.get('LBMA/GOLD', column_index=usd_am, start_date='2019-10-13', end_date='2020-10-13' , returns='numpy'))
 
+# Removing all nans
+gold_data = np.nan_to_num(gold_data, nan=0.0)
+
 # Creating date list
 while (count < len(gold_usd_am)):
       metal_date.append(count)
@@ -59,7 +62,8 @@ model = Sequential([
   Dense(units = 2, activation='softmax')
 ])
 
+# Training the neural network.
 model.compile(optimizer=Adam(learning_rate=0.0001), loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-model.fit(x=metal_date, y=scaled_gold_usd_am, batch_size=10, epochs=200, shuffle=True, verbose=2)
+model.fit(x=metal_date, y=scaled_gold_usd_am, batch_size=10, epochs=10, shuffle=True, verbose=2)
 
 
