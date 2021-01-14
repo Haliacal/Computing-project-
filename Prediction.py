@@ -4,6 +4,7 @@ import pandas as pd
 import datetime as dt
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.pyplot import *
 
 #import tensorflow as tf
 from sklearn.utils import shuffle
@@ -12,12 +13,15 @@ from numpy import *
 
 quandl.ApiConfig.api_key = 'Gv9VqzUx_24QFyuG267H'
 
+plt.style.use('ggplot')
+
 # Variables
 count = 0
 mid_prices = []
 EMA = 0.0
 gamma = 0.1
 test_data = quandl.get("LBMA/GOLD")
+series = quandl.get("LBMA/GOLD")
 
 
 # Gamma = smoothing/(1+days)
@@ -69,13 +73,13 @@ train_data = train_data.reshape(-1)
 
 # Normalize test data
 test_data = scaler.transform(test_data).reshape(-1)
-# The test data doesnt need to have windows as it is a much smaller dataset compared to the training data
+# The test data doesn't need to have windows as it is a much smaller dataset compared to the training data
 
 for ti in range(8000):
 	EMA = gamma * train_data[ti] + (1 - gamma) * EMA
 	train_data[ti] = EMA
 
-# Used for visualization and test purposes
+# Combining data back together
 all_mid_data = np.concatenate([train_data, test_data], axis=0)
 
 ''' Averaging '''
@@ -89,28 +93,24 @@ std_avg_x = []
 mse_errors = []
 
 for pred_idx in range(window_size,N):
+    if pred_idx >= N:
+    		date = dt.datetime.strptime(k, '%Y-%m-%d').date() + dt.timedelta(days=1)
   
-  if pred_idx >= N:
-    date = dt.datetime.strptime(k, '%Y-%m-%d').date() + dt.timedelta(days=1)
-  
-  else:
-    date = dateindex[pred_idx]
+    else:
+    	date = dateindex[pred_idx]
 
-  std_avg_predictions.append(np.nan_to_num(np.mean(train_data[pred_idx-window_size:pred_idx])))
-  mse_errors.append(np.nan_to_num((std_avg_predictions[-1]-train_data[pred_idx])**2))
-  std_avg_x.append(date)
+    std_avg_predictions.append(np.nan_to_num(np.mean(train_data[pred_idx-window_size:pred_idx])))
+    mse_errors.append(np.nan_to_num((std_avg_predictions[-1]-train_data[pred_idx])**2))
+    std_avg_x.append(date)
 
 
 #print('\nMSE error for standard averaging: %.5f'%(0.5*np.mean(mse_errors)))
 dateaxis = series.reset_index()['Date']
 
-plt.figure(figsize = (18,9))
-plt.plot(dateaxis,all_mid_data,color='orange',label='Test')
 plt.plot(dateaxis,all_mid_data,color='blue',label='True')
-plt.plot(dateaxis,std_avg_predictions,color='red',label='Prediction')
+#plt.plot(range(window_size,N),std_avg_predictions,color='red',label='Prediction')
 plt.xlabel('Date')
 plt.ylabel('Mid Price')
-plt.legend(fontsize=18)
 plt.show()
 
 # https://www.investopedia.com/ask/answers/122314/what-exponential-moving-average-ema-formula-and-how-ema-calculated.asp

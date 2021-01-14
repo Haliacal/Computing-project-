@@ -4,5 +4,18 @@
         "LBMA",
         "keras",
         "xticks"
-    ]
+    ],
+    "cSpell.ignoreWords": [
+        "ggplot"
+    ],
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        ".",
+        "-p",
+        "test_*.py"
+    ],
+    "python.testing.pytestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.unittestEnabled": true
 }
