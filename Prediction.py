@@ -83,7 +83,6 @@ for ti in range(8000):
 all_mid_data = np.concatenate([train_data, test_data], axis=0)
 
 ''' Averaging '''
-
 # standard average
 
 window_size = 100
@@ -104,15 +103,16 @@ for pred_idx in range(window_size,N):
     std_avg_x.append(date)
 
 
-#print('\nMSE error for standard averaging: %.5f'%(0.5*np.mean(mse_errors)))
+print('\nMSE error for standard averaging: %.5f'%(0.5*np.mean(mse_errors)))
 dateaxis = series.reset_index()['Date']
 
+'''
 plt.plot(dateaxis,all_mid_data,color='blue',label='True')
-#plt.plot(range(window_size,N),std_avg_predictions,color='red',label='Prediction')
+plt.plot(range(window_size,N),std_avg_predictions,color='red',label='Prediction')
 plt.xlabel('Date')
 plt.ylabel('Mid Price')
 plt.show()
-
+'''
 # https://www.investopedia.com/ask/answers/122314/what-exponential-moving-average-ema-formula-and-how-ema-calculated.asp
 
 # https://www.investopedia.com/terms/e/ema.asp
