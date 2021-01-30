@@ -31,9 +31,17 @@ series = quandl.get("LBMA/GOLD")
 gold_data = quandl.get("LBMA/GOLD", returns='numpy')
 
 # Getting Open and close data
-gold_usd_open = gold_data['USD (AM)']
+gold_usd_open = np.nan_to_num(gold_data['USD (AM)'])
 gold_usd_close = np.nan_to_num(gold_data['USD (PM)'], nan=0.0)
 dateindex = gold_data['Date']
+
+array_sum = np.sum(gold_usd_close)
+array_has_nan = np.isnan(array_sum)
+print("gold_usd_close data: ", array_has_nan)
+
+array_sum = np.sum(gold_usd_open)
+array_has_nan = np.isnan(array_sum)
+print("gold_usd_open data: ", array_has_nan)
 
 # Getting mid values the open and close data
 while (count < len(gold_usd_open)):
@@ -46,36 +54,43 @@ while (count < len(gold_usd_open)):
 		mid_prices.append(temp)
 
 	count = count + 1
+
+count = 0
+
 ''' Preparing Data'''
 # Splitting training and testing data set
-unscaled_train_data = mid_prices[:9000]
-unscaled_test_data = mid_prices[9000:]
+unscaled_train_data = mid_prices[:11000]
+unscaled_test_data = mid_prices[11000:]
+
+array_sum = np.sum(mid_prices)
+array_has_nan = np.isnan(array_sum)
+print("mid_prices data: ", array_has_nan)
 
 # Normalising Data
 scaler = MinMaxScaler()
 train_data = np.array(unscaled_train_data).reshape(-1, 1)
 test_data = np.array(unscaled_test_data).reshape(-1, 1)
 
+
 # Smoothing
-smoothing_window_size = 2000
-for di in range(0, 8000, smoothing_window_size):
+smoothing_window_size = 2500
+for di in range(0, 10000, smoothing_window_size):
 	scaler.fit(train_data[di:di + smoothing_window_size, :])
-	train_data[di:di + smoothing_window_size, :] = scaler.transform(
-	    train_data[di:di + smoothing_window_size, :])
+	train_data[di:di + smoothing_window_size, :] = scaler.transform(train_data[di:di + smoothing_window_size, :])
+
 
 # Smoothing end of graph
 scaler.fit(train_data[di + smoothing_window_size:, :])
-train_data[di + smoothing_window_size:, :] = scaler.transform(
-    train_data[di + smoothing_window_size:, :])
+train_data[di + smoothing_window_size:, :] = scaler.transform(train_data[di + smoothing_window_size:, :])
 
 # Reshape both train and test data
-train_data = train_data.reshape(-1)
+train_data = np.array(train_data).reshape(-1)
 
 # Normalize test data
 test_data = scaler.transform(test_data).reshape(-1)
 # The test data doesn't need to have windows as it is a much smaller dataset compared to the training data
 
-for ti in range(8000):
+for ti in range(11000):
 	EMA = gamma * train_data[ti] + (1 - gamma) * EMA
 	train_data[ti] = EMA
 
@@ -85,7 +100,7 @@ all_mid_data = np.concatenate([train_data, test_data], axis=0)
 ''' Averaging '''
 # standard average
 
-window_size = 100
+window_size = 300
 N = train_data.size
 std_avg_predictions = []
 std_avg_x = []
@@ -94,7 +109,6 @@ mse_errors = []
 for pred_idx in range(window_size,N):
     if pred_idx >= N:
     		date = dt.datetime.strptime(k, '%Y-%m-%d').date() + dt.timedelta(days=1)
-  
     else:
     	date = dateindex[pred_idx]
 
@@ -105,6 +119,15 @@ for pred_idx in range(window_size,N):
 
 print('\nMSE error for standard averaging: %.5f'%(0.5*np.mean(mse_errors)))
 dateaxis = series.reset_index()['Date']
+
+array_sum = np.sum(all_mid_data)
+array_has_nan = np.isnan(array_sum)
+print("Mid data: ", array_has_nan)
+
+
+
+
+
 
 '''
 plt.plot(dateaxis,all_mid_data,color='blue',label='True')
