@@ -45,21 +45,21 @@ print("gold_usd_open data: ", array_has_nan)
 
 # Getting mid values the open and close data
 while (count < len(gold_usd_open)):
-	temp = (gold_usd_open[count] + gold_usd_close[count]) / 2.0
+    temp = (gold_usd_open[count] + gold_usd_close[count]) / 2.0
 
-	if (gold_usd_open[count] == 0 or gold_usd_close[count] == 0):
-		mid_prices.append(temp * 2.0)
+    if (gold_usd_open[count] == 0 or gold_usd_close[count] == 0):
+        mid_prices.append(temp * 2.0)
 
-	else:
-		mid_prices.append(temp)
+    else:
+        mid_prices.append(temp)
 
-	count = count + 1
+    count = count + 1
 
 count = 0
 
 while(count < len(mid_prices)):
-    if (mid_prices[count]):
-    	temp = (mid_prices[count-1] + mid_prices[count+1])/2.0
+    if (mid_prices[count] == 0):
+        temp = (mid_prices[count-1] + mid_prices[count+1])/2.0
         mid_prices[count] = temp
 
     count = count + 1
