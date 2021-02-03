@@ -37,7 +37,7 @@ dateindex = gold_data['Date']
 
 # Getting mid values the open and close data
 while (count < len(gold_usd_open)):
-    temp = (gold_usd_open[count] + gold_usd_close[count]) / 2.0 # Typical mid poin between two data entries
+    temp = (gold_usd_open[count] + gold_usd_close[count]) / 2.0 # Typical mid point between two data entries
 
     if (gold_usd_open[count] == 0 or gold_usd_close[count] == 0):
         mid_prices.append(temp * 2.0) # if one data entries for either morn or even is not entered the data entry that was entered will be taken
@@ -45,7 +45,7 @@ while (count < len(gold_usd_open)):
     else:
         mid_prices.append(temp)
 
-    count = count + 1
+    count += 1
 
 count = 0
 
@@ -56,7 +56,7 @@ while(count < len(mid_prices)-1):
         if(temp == mid_prices[count-1] or temp == mid_prices[count+1]): mid_prices[count] = temp # Checks if one the data entries is 0
         else: mid_prices[count] = temp/2.0
 
-    count = count + 1
+    count += 1
 
 # Problem with this is that if we have data entries [x, y , z]
 # and the y is 0 then we would have to that
@@ -173,28 +173,92 @@ train_inputs, train_outputs = [],[]
 tf.compat.v1.disable_eager_execution()
 
 # You unroll the input over time defining placeholders for each time step
+#Each placeholder has a single batch of data and there will be a total of "num_unrolling" placeholder (50)
 for ui in range(num_unrolling):
     train_inputs.append(tf.compat.v1.placeholder(tf.float32, shape=(batch_size,D),name='train_inputs_%d'%ui))
     train_outputs.append(tf.compat.v1.placeholder(tf.float32, shape=(batch_size,1), name ='train_outputs_%d'%ui))
 
-lstm_cells = [
-    tf.compat.v1.nn.rnn_cell.LSTMCell(num_units=num_nodes[li],
-                            state_is_tuple=True,
-                            initializer= tf.keras.initializers.glorot_normal()
-                           )
- for li in range(n_layers)]
+
+# w and b is getting the output of the last lst, cell and outputting the prediction for the next time step
+lstm_cells = [tf.compat.v1.nn.rnn_cell.LSTMCell(
+    num_units=num_nodes[li],
+    state_is_tuple=True,
+    initializer=tf.keras.initializers.glorot_normal())
+    for li in range(n_layers)]
 
 drop_lstm_cells = [tf.compat.v1.nn.rnn_cell.DropoutWrapper(
-    lstm, input_keep_prob=1.0,output_keep_prob=1.0-dropout, state_keep_prob=1.0-dropout
-) for lstm in lstm_cells]
+    lstm, input_keep_prob=1.0,
+    output_keep_prob=1.0-dropout,
+    state_keep_prob=1.0-dropout)
+    for lstm in lstm_cells]
+
+
 drop_multi_cell = tf.compat.v1.nn.rnn_cell.MultiRNNCell(drop_lstm_cells)
 multi_cell = tf.compat.v1.nn.rnn_cell.MultiRNNCell(lstm_cells)
 
-w = tf.compat.v1.get_variable('w',shape=[num_nodes[-1], 1], initializer=tf.keras.initializers.glorot_normal())
-b = tf.compat.v1.get_variable('b',initializer=tf.random.uniform([1],-0.1,0.1))
+w = tf.compat.v1.get_variable('w',shape=[num_nodes[-1], 1], initializer=tf.keras.initializers.glorot_normal()) # weights
+b = tf.compat.v1.get_variable('b',initializer=tf.random.uniform([1],-0.1,0.1)) # biases
 
 
-print("done")
+# Create cell state and hidden state variables to maintain the state of the LSTM
+c, h = [],[]
+initial_state = []
+for li in range(n_layers):
+    # First set all values of c and h to 0 and for them into matices
+    c.append(tf.Variable(tf.zeros([batch_size, num_nodes[li]]), trainable=False))
+    h.append(tf.Variable(tf.zeros([batch_size, num_nodes[li]]), trainable=False))
+    initial_state.append(tf.compat.v1.nn.rnn_cell.LSTMStateTuple(c[li], h[li]))
+
+# Do several tensor transformations, because the function dynamic_rnn requires the output to be of
+# a specific format.
+all_inputs = tf.concat([tf.expand_dims(t,0) for t in train_inputs],axis=0)
+
+# all_outputs is [seq_length, batch_size, num_nodes]
+all_lstm_outputs, state = tf.compat.v1.nn.dynamic_rnn(
+    drop_multi_cell,
+    all_inputs,
+    initial_state=tuple(initial_state),
+    time_major = True, dtype=tf.float32)
+
+# reshapes into a new matrice with the "batch_size*num_unrolling,num_nodes[-1]"
+all_lstm_outputs = tf.reshape(all_lstm_outputs, [batch_size*num_unrolling,num_nodes[-1]]) 
+
+# Takes the outputs and uses them to times them by the weights and add the biases
+all_outputs = tf.compat.v1.nn.xw_plus_b(all_lstm_outputs,w,b)
+
+# Splitting into sub tensor by num_unrolling (50)
+split_outputs = tf.split(all_outputs,num_unrolling,axis=0)
+
+# When calculating the loss you need to be careful about the exact form, because you calculate
+# loss of all the unrolled steps at the same time
+# Therefore, take the mean error or each batch and get the sum of that over all the unrolled steps
+
+print('Defining training Loss')
+loss = 0.0
+with tf.control_dependencies([tf.compat.v1.assign(c[li], state[li][0]) for li in range(n_layers)]+
+                             [tf.compat.v1.assign(h[li], state[li][1]) for li in range(n_layers)]):
+  for ui in range(num_unrolling):
+    loss += tf.reduce_mean(0.5*(split_outputs[ui]-train_outputs[ui])**2)
+
+print('Learning rate decay operations')
+global_step = tf.Variable(0, trainable=False)
+inc_gstep = tf.compat.v1.assign(global_step,global_step + 1)
+tf_learning_rate = tf.compat.v1.placeholder(shape=None,dtype=tf.float32)
+tf_min_learning_rate = tf.compat.v1.placeholder(shape=None,dtype=tf.float32)
+
+learning_rate = tf.maximum(
+    tf.compat.v1.train.exponential_decay(tf_learning_rate,global_step, decay_steps=1, decay_rate=0.5, staircase=True),
+    tf_min_learning_rate)
+
+# Optimizer.
+print('TF Optimization operations')
+optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate)
+gradients, v = zip(*optimizer.compute_gradients(loss))
+gradients, _ = tf.clip_by_global_norm(gradients, 5.0)
+optimizer = optimizer.apply_gradients(
+    zip(gradients, v))
+
+print('\tAll done')
 
 
 # https://www.datacamp.com/community/tutorials/lstm-python-stock-market
