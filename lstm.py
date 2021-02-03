@@ -221,7 +221,7 @@ all_lstm_outputs, state = tf.compat.v1.nn.dynamic_rnn(
     time_major = True, dtype=tf.float32)
 
 # reshapes into a new matrice with the "batch_size*num_unrolling,num_nodes[-1]"
-all_lstm_outputs = tf.reshape(all_lstm_outputs, [batch_size*num_unrolling,num_nodes[-1]]) 
+all_lstm_outputs = tf.reshape(all_lstm_outputs, [batch_size*num_unrolling,num_nodes[-1]])
 
 # Takes the outputs and uses them to times them by the weights and add the biases
 all_outputs = tf.compat.v1.nn.xw_plus_b(all_lstm_outputs,w,b)
@@ -237,8 +237,9 @@ split_outputs = tf.split(all_outputs,num_unrolling,axis=0)
 loss = 0.0
 with tf.control_dependencies([tf.compat.v1.assign(c[li], state[li][0]) for li in range(n_layers)]+
                              [tf.compat.v1.assign(h[li], state[li][1]) for li in range(n_layers)]):
-  for ui in range(num_unrolling):
-    loss += tf.reduce_mean(0.5*(split_outputs[ui]-train_outputs[ui])**2)
+
+  # Sum of all the mean squared averages
+  for ui in range(num_unrolling): loss += tf.reduce_mean(0.5*(split_outputs[ui]-train_outputs[ui])**2)
 
 # Learning rate decay operations
 global_step = tf.Variable(0, trainable=False)
@@ -251,14 +252,36 @@ learning_rate = tf.maximum(
     tf_min_learning_rate)
 
 # Optimizer.
-# TF Optimization operations
+# Using adam because it is new and is very good so far
+# This can be adjusted at anypoint
 optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate)
 gradients, v = zip(*optimizer.compute_gradients(loss))
 gradients, _ = tf.clip_by_global_norm(gradients, 5.0)
-optimizer = optimizer.apply_gradients(
-    zip(gradients, v))
+optimizer = optimizer.apply_gradients(zip(gradients, v))
 
-print('\tAll done')
+print('Defining prediction related TF functions')
+
+sample_inputs = tf.compat.v1.placeholder(tf.float32, shape=[1,D])
+
+# Maintaining LSTM state for prediction stage
+sample_c, sample_h, initial_sample_state = [],[],[]
+for li in range(n_layers):
+  sample_c.append(tf.Variable(tf.zeros([1, num_nodes[li]]), trainable=False))
+  sample_h.append(tf.Variable(tf.zeros([1, num_nodes[li]]), trainable=False))
+  initial_sample_state.append(tf.compat.v1.nn.rnn_cell.LSTMStateTuple(sample_c[li],sample_h[li]))
+
+reset_sample_states = tf.group(*[tf.compat.v1.assign(sample_c[li],tf.zeros([1, num_nodes[li]])) for li in range(n_layers)],
+                               *[tf.compat.v1.assign(sample_h[li],tf.zeros([1, num_nodes[li]])) for li in range(n_layers)])
+
+sample_outputs, sample_state = tf.compat.v1.nn.dynamic_rnn(multi_cell, tf.expand_dims(sample_inputs,0),
+                                   initial_state=tuple(initial_sample_state),
+                                   time_major = True,
+                                   dtype=tf.float32)
+
+with tf.control_dependencies([tf.compat.v1.assign(sample_c[li],sample_state[li][0]) for li in range(n_layers)]+
+                              [tf.compat.v1.assign(sample_h[li],sample_state[li][1]) for li in range(n_layers)]):
+  sample_prediction = tf.compat.v1.nn.xw_plus_b(tf.reshape(sample_outputs,[1,-1]), w, b)
+
 
 
 # https://www.datacamp.com/community/tutorials/lstm-python-stock-market
