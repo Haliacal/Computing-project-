@@ -233,14 +233,14 @@ split_outputs = tf.split(all_outputs,num_unrolling,axis=0)
 # loss of all the unrolled steps at the same time
 # Therefore, take the mean error or each batch and get the sum of that over all the unrolled steps
 
-print('Defining training Loss')
+# Defining training Loss
 loss = 0.0
 with tf.control_dependencies([tf.compat.v1.assign(c[li], state[li][0]) for li in range(n_layers)]+
                              [tf.compat.v1.assign(h[li], state[li][1]) for li in range(n_layers)]):
   for ui in range(num_unrolling):
     loss += tf.reduce_mean(0.5*(split_outputs[ui]-train_outputs[ui])**2)
 
-print('Learning rate decay operations')
+# Learning rate decay operations
 global_step = tf.Variable(0, trainable=False)
 inc_gstep = tf.compat.v1.assign(global_step,global_step + 1)
 tf_learning_rate = tf.compat.v1.placeholder(shape=None,dtype=tf.float32)
@@ -251,7 +251,7 @@ learning_rate = tf.maximum(
     tf_min_learning_rate)
 
 # Optimizer.
-print('TF Optimization operations')
+# TF Optimization operations
 optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate)
 gradients, v = zip(*optimizer.compute_gradients(loss))
 gradients, _ = tf.clip_by_global_norm(gradients, 5.0)
