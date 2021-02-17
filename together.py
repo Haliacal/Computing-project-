@@ -32,7 +32,7 @@ gold_data = quandl.get("LBMA/GOLD", returns='numpy')
 
 # Getting Open and close data
 gold_usd_open = np.nan_to_num(gold_data['USD (AM)'])
-gold_usd_close = np.nan_to_num(gold_data['USD (PM)'], nan=0.0)
+gold_usd_close = np.nan_to_num(gold_data['USD (PM)'])
 dateindex = gold_data['Date']
 
 # Getting mid values the open and close data

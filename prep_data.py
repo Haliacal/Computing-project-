@@ -11,8 +11,6 @@ from numpy import *
 
 quandl.ApiConfig.api_key = 'Gv9VqzUx_24QFyuG267H'
 
-plt.style.use('ggplot')
-
 # Variables
 count = 0
 mid_prices = []
@@ -90,8 +88,10 @@ for ti in range(11000):
 all_mid_data = np.concatenate([train_data, test_data], axis=0)
 
 # Save contents
-a = np.array(all_mid_data)
-np.savetxt('mid_data.txt', a, fmt='%d')
+a = (np.array(all_mid_data)).reshape((len(all_mid_data),1))
+file = open("mid_data.txt","w")
+for row in a: np.savetxt(file, row)
+file.close()
 
 '''
 b = np.loadtxt('mid_data.txt', dtype=int)
