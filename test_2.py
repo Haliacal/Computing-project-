@@ -11,29 +11,48 @@ print(all_mid_prices)'''
 ''' Data Collection'''
 
 print('\n \n')
-# Separates the dates from the metal price
-def import_data(time_or_price, metal_data):
-    metal = [] # creates array to append to and return
-    count = 0
-    while(count != (len(metal_data))):
-        metal.append(metal_data[count][time_or_price])
-        # Uses the time_or_price parameter to select column and individually appends the data into the array
-        count = count + 1
-    np.array(metal)
-    return metal;
+# Import table data
+gold_data = quandl.get("LBMA/GOLD", returns='numpy')
+mid_prices = []
+count = 0
 
-# Variables
-date = 0
-price = 1
-# Imports data from quandl into an array
-gold_data = quandl.get("LBMA/GOLD")
-gold_usd_am = import_data(price,quandl.get('LBMA/GOLD', column_index='1', returns='numpy'))
-gold_usd_pm = import_data(price,quandl.get('LBMA/GOLD', column_index='2', returns='numpy'))
-metal_date = import_data(date,quandl.get('LBMA/GOLD', column_index='1', returns='numpy'))
+# Getting Open and close data
+gold_usd_open = np.nan_to_num(gold_data['USD (AM)'])
 
-print(np.array(gold_usd_am))
+gold_usd_close = gold_data['USD (PM)']
+
+dateindex = gold_data['Date']
+
+# Getting mid values the open and close data
+while (count < len(gold_usd_open)):
+    temp = (gold_usd_open[count] + gold_usd_close[count]) / 2.0 # Typical mid point between two data entries
+    if (gold_usd_open[count] == 0 or gold_usd_close[count] == 0):
+        mid_prices.append(temp * 2.0) # if one data entries for either morn or even is not entered the data entry that was entered will be taken
+    else: mid_prices.append(temp)
+    count += 1
+
+count = 0
+# rare case if both data entries are 0 then the previous and next data entry will act as the data points
+while(count < len(mid_prices)-1):
+    if (mid_prices[count]):
+        temp = (mid_prices[count-1] + mid_prices[count+1])/2.0
+        mid_prices[count] = temp
+
+    count += 1
+
+# Problem with this is that if we have data entries [x, y , z]
+# and the y is 0 then we would have to that
+
+'''
+print(np.array(gold_usd_open))
 print('\n \n')
-print(np.array(metal_date))
+print(np.array(dateindex))
 print('\n \n')
-print(np.array(gold_usd_pm))
+print(np.array(mid_prices))
+print('\n \n')
+'''
+
+print(np.array(gold_usd_close))
+print('\n \n')
+print (np.nan_to_num(gold_usd_close))
 print('\n \n')
