@@ -41,6 +41,7 @@ while (count < len(gold_usd_open)):
     if (gold_usd_open[count] == 0 or gold_usd_close[count] == 0):
         mid_prices.append(temp * 2.0) # if one data entries for either morn or even is not entered the data entry that was entered will be taken
     else: mid_prices.append(temp)
+    count = count + 1
 
 count = 0
 # rare case if both data entries are 0 then the previous and next data entry will act as the data points

@@ -17,11 +17,14 @@ mid_prices = []
 count = 0
 
 # Getting Open and close data
-gold_usd_open = np.nan_to_num(gold_data['USD (AM)'])
+gold_usd_open = np.nan_to_num(gold_data[6])
 
 gold_usd_close = gold_data['USD (PM)']
 
 dateindex = gold_data['Date']
+
+print(gold_usd_open)
+
 
 # Getting mid values the open and close data
 while (count < len(gold_usd_open)):
@@ -32,27 +35,19 @@ while (count < len(gold_usd_open)):
     count += 1
 
 count = 0
+
 # rare case if both data entries are 0 then the previous and next data entry will act as the data points
 while(count < len(mid_prices)-1):
-    if (mid_prices[count]):
+    if (mid_prices[count] == 0):
         temp = (mid_prices[count-1] + mid_prices[count+1])/2.0
         mid_prices[count] = temp
 
     count += 1
 
-# Problem with this is that if we have data entries [x, y , z]
-# and the y is 0 then we would have to that
+
 
 '''
-print(np.array(gold_usd_open))
-print('\n \n')
-print(np.array(dateindex))
-print('\n \n')
 print(np.array(mid_prices))
 print('\n \n')
 '''
 
-print(np.array(gold_usd_close))
-print('\n \n')
-print (np.nan_to_num(gold_usd_close))
-print('\n \n')
