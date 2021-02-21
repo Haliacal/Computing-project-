@@ -91,16 +91,9 @@ for ti in range(10500):
 # Combining data back together
 all_mid_data = np.concatenate([train_data, test_data], axis=0)
 
-plt.plot(range(gold_data.shape[0]),all_mid_data,color='blue',label='True')
-plt.xlabel('Date')
-plt.ylabel('Mid Price')
-plt.show()
 
-
-'''
 # Save contents
-a = (np.array(all_mid_data)).reshape((len(all_mid_data),1))
-file = open("mid_data.txt","w")
+a = (np.array(all_mid_data)).reshape((len(all_mid_data),1)) # all data needs to a specific shape
+file = open("mid_data.txt","w") # the w is for writing
 for row in a: np.savetxt(file, row)
 file.close()
-'''
