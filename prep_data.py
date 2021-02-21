@@ -57,8 +57,8 @@ while(count < len(mid_prices)-1):
 ''' Preparing Data'''
 
 # Splitting training and testing data set
-unscaled_train_data = mid_prices[:11000]
-unscaled_test_data = mid_prices[11000:]
+unscaled_train_data = mid_prices[:13000]
+unscaled_test_data = mid_prices[13000:]
 
 # Normalising Data
 scaler = MinMaxScaler()
@@ -66,8 +66,8 @@ train_data = np.array(unscaled_train_data).reshape(-1, 1)
 test_data = np.array(unscaled_test_data).reshape(-1, 1)
 
 # Smoothing
-smoothing_window_size = 2500
-for di in range(0, 10000, smoothing_window_size):
+smoothing_window_size = 3500
+for di in range(0, 10500, smoothing_window_size):
     scaler.fit(train_data[di:di + smoothing_window_size, :])
     train_data[di:di + smoothing_window_size, :] = scaler.transform(train_data[di:di + smoothing_window_size, :])
 
@@ -82,9 +82,9 @@ train_data = np.array(train_data).reshape(-1)
 # Normalize test data
 test_data = scaler.transform(test_data).reshape(-1)
 # The test data doesn't need to have windows as it is a much smaller dataset compared to the training data
-multiplier = 0.15
+multiplier = 5
 
-for ti in range(10000):
+for ti in range(10500):
     EMA = multiplier * train_data[ti] + (1 - multiplier) * EMA
     train_data[ti] = EMA
 
