@@ -40,46 +40,44 @@ train_data = all_mid_prices[:13000]
 test_data = all_mid_prices[13000:]
 
 ''' Standard Averaging '''
-'''
-window_size = 300 # How many days into the past will be use to make interpolation prediction
+
+window_size = -100 # How many days into the past will be use to make interpolation prediction
 N = train_data.size# Total data size
 
 # Array variables
-window_size = 300
-N = train_data.size
 std_avg_predictions = []
 std_avg_x = []
-mse_errors = []
+mse_total = []
 
-for pred_idx in range(window_size,N):
+for r in range(window_size,N):
 
-    # Records date of the data
-    if pred_idx >= N:
-            date = dt.datetime.strptime(k, '%Y-%m-%d').date() + dt.timedelta(days=1)
-            date = dt.datetime.strptime(k, '%Y-%m-%d').date() + dt.timedelta(days=1)
-    else:
-        date = dateindex[pred_idx]
-        date = dateindex[pred_idx]
+    # Finding mean for next value
+    mean = np.mean(train_data[r-window_size:r]) # finds mean through numpy of the last r days
+    std_avg_predictions.append(np.nan_to_num(mean))
 
-    # Uses the standard averaging algorithm
-    std_avg_predictions.append(np.nan_to_num(np.mean(train_data[pred_idx-window_size:pred_idx])))
-    mse_errors.append(np.nan_to_num((std_avg_predictions[-1]-train_data[pred_idx])**2))
-    std_avg_x.append(date)
+    # Calculating error
+    mse = np.nan_to_num((std_avg_predictions[-1]-train_data[r])**2) # squares difference
+    mse_total.append(mse)
+
+    # Appending date
+    std_avg_x.append(dateindex[r])
+
+# Total mean mse
+mse = 0.5*np.mean(mse_total)
+
+# Outputs the mse to 5 significant figures
+print('\nMSE error: %.5f'%mse)
 
 
-print('\nMSE error for standard averaging: %.5f'%(0.5*np.mean(mse_errors)))
-dateaxis = series.reset_index()['Date']
-
-plt.plot(range(gold_data.shape[0]),all_mid_data,color='blue',label='True')
+plt.plot(range(gold_data.shape[0]),all_mid_prices,color='blue',label='True')
 plt.plot(range(window_size,N),std_avg_predictions,color='red',label='Prediction')
 plt.xlabel('Date')
 plt.ylabel('Mid Price')
 plt.show()
 
-'''
 
 ''' Exponential Moving average '''
-
+'''
 date = []
 window_size = 300 # How many days into the past will be use to make interpolation prediction
 N = train_data.size # Total data size
@@ -108,6 +106,7 @@ plt.plot(range(0,N),run_avg_predictions,color='r', label='Prediction')
 plt.xlabel('Date')
 plt.ylabel('Mid Price')
 plt.show()
+'''
 
 # https://www.investopedia.com/ask/answers/122314/what-exponential-moving-average-ema-formula-and-how-ema-calculated.asp
 
