@@ -19,7 +19,6 @@ plt.style.use('ggplot')
 count = 0
 mid_prices = []
 EMA = 0.0
-gamma = 0.1
 test_data = quandl.get("LBMA/GOLD")
 series = quandl.get("LBMA/GOLD")
 
@@ -41,7 +40,7 @@ test_data = all_mid_prices[13000:]
 
 ''' Standard Averaging '''
 
-window_size = -100 # How many days into the past will be use to make interpolation prediction
+window_size = 300 # How many days into the past will be use to make interpolation prediction
 N = train_data.size# Total data size
 
 # Array variables
@@ -65,48 +64,41 @@ for r in range(window_size,N):
 # Total mean mse
 mse = 0.5*np.mean(mse_total)
 
-# Outputs the mse to 5 significant figures
-print('\nMSE error: %.5f'%mse)
-
-
-plt.plot(range(gold_data.shape[0]),all_mid_prices,color='blue',label='True')
-plt.plot(range(window_size,N),std_avg_predictions,color='red',label='Prediction')
-plt.xlabel('Date')
-plt.ylabel('Mid Price')
-plt.show()
-
-
 ''' Exponential Moving average '''
-'''
+
 date = []
-window_size = 300 # How many days into the past will be use to make interpolation prediction
 N = train_data.size # Total data size
 
-run_avg_predictions = []
-run_avg_x = []
+ema_avg_predictions = []
+ema_avg_x = []
 mse_errors = []
 
-running_mean = 0.0
-run_avg_predictions.append(running_mean)
+ema = 0.0
+ema_avg_predictions.append(ema)
 
-decay = 0.5
+weight = 0.1
 
 # Exponential moving average algorithm
-for pred_idx in range(1,N):
+for i in range(1,N):
 
-    running_mean = running_mean*decay + (1.0-decay)*train_data[pred_idx-1]
-    run_avg_predictions.append(running_mean)
-    mse_errors.append((run_avg_predictions[-1]-train_data[pred_idx])**2)
-    run_avg_x.append(date)
+    # Ema formula and appending values
+    ema = ema*weight + (1-weight)*train_data[i-1]
+    ema_avg_predictions.append(ema)
 
-print('MSE error for EMA averaging: %.5f'%(0.5*np.mean(mse_errors)))
+    # calculating error and appending date
+    mse_errors.append((ema_avg_predictions[-1]-train_data[i])**2)
+    ema_avg_x.append(date)
 
-plt.plot(range(gold_data.shape[0]),all_mid_prices,color='b',label='True')
-plt.plot(range(0,N),run_avg_predictions,color='r', label='Prediction')
+print('MSE error: %.5f'%(0.5*np.mean(mse_errors)))
+
+line1 = plt.plot(range(gold_data.shape[0]),all_mid_prices,color='blue',label='True')
+line2 = plt.plot(range(0,N),ema_avg_predictions,color='orange', label='EMA')
+line3 = plt.plot(range(window_size,N),std_avg_predictions,color='green',label='SMA')
 plt.xlabel('Date')
 plt.ylabel('Mid Price')
+plt.legend()
 plt.show()
-'''
+
 
 # https://www.investopedia.com/ask/answers/122314/what-exponential-moving-average-ema-formula-and-how-ema-calculated.asp
 
