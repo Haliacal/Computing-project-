@@ -82,7 +82,7 @@ train_data = np.array(train_data).reshape(-1)
 # Normalize test data
 test_data = scaler.transform(test_data).reshape(-1)
 # The test data doesn't need to have windows as it is a much smaller dataset compared to the training data
-multiplier = 5
+multiplier = 0.15
 
 for ti in range(10500):
     EMA = multiplier * train_data[ti] + (1 - multiplier) * EMA
@@ -91,7 +91,7 @@ for ti in range(10500):
 # Combining data back together
 all_mid_data = np.concatenate([train_data, test_data], axis=0)
 
-
+print("saved the contents")
 # Save contents
 a = (np.array(all_mid_data)).reshape((len(all_mid_data),1)) # all data needs to a specific shape
 file = open("mid_data.txt","w") # the w is for writing

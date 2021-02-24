@@ -61,9 +61,6 @@ for r in range(window_size,N):
     # Appending date
     std_avg_x.append(dateindex[r])
 
-# Total mean mse
-mse = 0.5*np.mean(mse_total)
-
 ''' Exponential Moving average '''
 
 date = []
@@ -91,9 +88,9 @@ for i in range(1,N):
 
 print('MSE error: %.5f'%(0.5*np.mean(mse_errors)))
 
-line1 = plt.plot(range(gold_data.shape[0]),all_mid_prices,color='blue',label='True')
-line2 = plt.plot(range(0,N),ema_avg_predictions,color='orange', label='EMA')
-line3 = plt.plot(range(window_size,N),std_avg_predictions,color='green',label='SMA')
+plt.plot(range(gold_data.shape[0]),all_mid_prices,color='blue',label='True')
+plt.plot(range(0,N),ema_avg_predictions,color='orange', label='EMA')
+plt.plot(range(window_size,N),std_avg_predictions,color='green',label='SMA')
 plt.xlabel('Date')
 plt.ylabel('Mid Price')
 plt.legend()
